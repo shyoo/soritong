@@ -277,16 +277,14 @@ pub fn is_openai_host(base_url: &str) -> bool {
 
 /// Parses raw 24 kHz, 16-bit little-endian mono PCM samples into [`PcmChunk`].
 pub fn parse_pcm_s16le_24k(bytes: &[u8]) -> Result<PcmChunk> {
-    if !bytes.len().is_multiple_of(2) {
+    if bytes.len() % 2 != 0 {
         return Err(TtsError::Engine(
             "pcm bytes length must be a multiple of 2".into(),
         ));
     }
     let samples: Vec<f32> = bytes
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|c| i16::from_le_bytes(*c) as f32 / 32768.0)
+        .chunks_exact(2)
+        .map(|c| i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0)
         .collect();
     Ok(PcmChunk {
         sample_rate: 24000,

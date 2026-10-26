@@ -1,0 +1,122 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SORITONG_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate annotated release tag and CI
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          . ./scripts/version.ps1
+          $version = Get-SoritongVersion $env:RELEASE_TAG
+          git fetch --force origin "refs/tags/$env:RELEASE_TAG`:refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch tag' }
+          if ((git cat-file -t "refs/tags/$env:RELEASE_TAG") -ne 'tag') { throw 'Use an annotated tag' }
+          if (-not (git for-each-ref --format='%(contents)' "refs/tags/$env:RELEASE_TAG")) { throw 'Tag needs release notes' }
+          git fetch origin main
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch main' }
+          git merge-base --is-ancestor HEAD origin/main
+          if ($LASTEXITCODE -ne 0) { throw 'Release commit must be on main' }
+          $sha = git rev-parse HEAD
+          $json = gh api "repos/$env:GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$sha&event=push&per_page=100"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read CI runs' }
+          $runs = $json | ConvertFrom-Json
+          if (-not @($runs.workflow_runs | Where-Object { $_.head_branch -eq 'main' -and $_.conclusion -eq 'success' }).Count) {
+              throw 'Main CI must pass on the tagged commit'
+          }
+
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          if ($LASTEXITCODE -ne 0) { throw 'Rust installation failed' }
+          rustup default stable-x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw 'Rust selection failed' }
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install tauri-cli
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-pc-windows-msvc.zip" -OutFile "$env:TEMP\binstall.zip"
+          Expand-Archive -Path "$env:TEMP\binstall.zip" -DestinationPath "$env:USERPROFILE\.cargo\bin" -Force
+          cargo binstall --no-confirm tauri-cli
+
+      - name: Build release packages
+        run: ./scripts/release.ps1
+
+      - name: Smoke test installer
+        run: ./scripts/test-installer.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: soritong-windows-x64
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: soritong-windows-x64
+          path: dist
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'dist/*'
+
+      - name: Publish release with tag notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.[1-9][0-9]*)?$ ]]
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          git for-each-ref --format='%(contents)' "refs/tags/$RELEASE_TAG" > notes.md
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+          flags=(--latest)
+          if [[ "$RELEASE_TAG" == *-rc.* ]]; then flags=(--prerelease --latest=false); fi
+          gh release create "$RELEASE_TAG" dist/* --verify-tag --title "soritong $RELEASE_TAG" --notes-file notes.md "${flags[@]}"
