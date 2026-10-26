@@ -8,7 +8,7 @@
 //!
 //! Known pairs:
 //!
-//! - **VB-CABLE** (and CABLE-A…D, Hi-Fi Cable, the 16ch variant): `CABLE Input (VB-Audio Virtual
+//! - **VB-CABLE** (and CABLE-A…D, Hi-Fi Cable): `CABLE Input (VB-Audio Virtual
 //!   Cable)` → `CABLE Output (VB-Audio Virtual Cable)`. A hard loop in the driver.
 //! - **Voicemeeter**: the virtual inputs feed the B buses. `Voicemeeter Input (VB-Audio Voicemeeter
 //!   VAIO)` → `Voicemeeter Out B1 (…VAIO)`, `Voicemeeter AUX Input (…AUX VAIO)` → `Out B2`,
@@ -69,9 +69,12 @@ pub fn detect_virtual_mic<S: AsRef<str>>(
     }
 
     if lower_suffix.contains("vb-audio") {
-        let wanted = endpoint
-            .replace("Input", "Output")
-            .replace("In 16ch", "Output");
+        // `CABLE In 16ch` (pack 45+) feeds the same CABLE Output, but rejects its own reported
+        // stereo mix format in shared mode (AUDCLNT_E_UNSUPPORTED_FORMAT), so it cannot be played to.
+        if endpoint.contains("16ch") {
+            return None;
+        }
+        let wanted = endpoint.replace("Input", "Output");
         let exact = same_suffix().find(|c| split_name(c).0.eq_ignore_ascii_case(&wanted));
         let out = exact.or_else(|| {
             same_suffix().find(|c| split_name(c).0.to_lowercase().contains("output"))
@@ -130,10 +133,7 @@ mod tests {
             zoom("CABLE Input (VB-Audio Virtual Cable)", &caps),
             pair("VB-CABLE", "CABLE Output (VB-Audio Virtual Cable)")
         );
-        assert_eq!(
-            zoom("CABLE In 16ch (VB-Audio Virtual Cable)", &caps),
-            pair("VB-CABLE", "CABLE Output (VB-Audio Virtual Cable)")
-        );
+        assert_eq!(zoom("CABLE In 16ch (VB-Audio Virtual Cable)", &caps), None);
         assert_eq!(
             zoom("CABLE-A Input (VB-Audio Cable A)", &caps),
             pair("VB-CABLE", "CABLE-A Output (VB-Audio Cable A)")

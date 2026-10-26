@@ -380,12 +380,7 @@ fn wizard_get_state(app: tauri::State<'_, App>) -> Result<WizardViewState, Strin
     let outputs = soritong_audio::list_outputs().unwrap_or_default();
     let inputs = soritong_audio::list_inputs().unwrap_or_default();
 
-    let cable_output_device = outputs.iter().find(|d| {
-        d.virtual_mic
-            .as_ref()
-            .is_some_and(|vm| vm.family == "VB-CABLE")
-            || soritong_audio::defaults::is_cable_endpoint(&d.name)
-    });
+    let cable_output_device = soritong_audio::preferred_virtual_mic(&outputs);
     let cable_installed = cable_output_device.is_some();
     let zoom_mic_name = cable_output_device
         .and_then(|d| d.virtual_mic.as_ref().map(|vm| vm.zoom_mic_name.clone()))
@@ -570,12 +565,7 @@ fn wizard_configure_soritong(
 async fn wizard_run_loopback() -> CmdResult<soritong_audio::loopback::LoopbackReport> {
     tauri::async_runtime::spawn_blocking(move || {
         let outputs = soritong_audio::list_outputs().map_err(|e| e.to_string())?;
-        let cable_in = outputs.iter().find(|d| {
-            d.virtual_mic
-                .as_ref()
-                .is_some_and(|vm| vm.family == "VB-CABLE")
-                || soritong_audio::defaults::is_cable_endpoint(&d.name)
-        });
+        let cable_in = soritong_audio::preferred_virtual_mic(&outputs);
         let out_id = match cable_in {
             Some(d) => d.id.as_str(),
             None => {

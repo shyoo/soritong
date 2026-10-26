@@ -49,6 +49,8 @@ PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Pat
 
 ## What is unproven
 
+- Loopback via `CABLE Input` passes on the owner's PC (2026-10-25, 111 ms). The wizard had been testing `CABLE In 16ch`, which cannot be opened; fixed via `preferred_virtual_mic`. Not yet re-run through the wizard UI by the owner.
+
 - Wizard step 4 "Restore Windows Defaults" on a real machine. On the owner's PC (2026-10-25) VB-CABLE had taken the default speaker; Listen was off. Step 4 used to show every warning together with its "OK" twin (CSS `display` beat `hidden`); fixed.
 
 - No human has listened to any engine's output yet.

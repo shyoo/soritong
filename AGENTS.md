@@ -47,6 +47,10 @@ Run these and make them pass before you report done:
   - Node 22 `node --test <directory>` fails with MODULE_NOT_FOUND. Pass the test files.
   - CDP `Runtime.evaluate` shares one top-level scope across calls, so a second `const x` throws.
     Wrap snippets in `(() => { ... })()`.
+  - VB-CABLE pack 45 adds `CABLE In 16ch`, listed before `CABLE Input`. It rejects its own reported
+    format in shared mode (OS error -2004287478, AUDCLNT_E_UNSUPPORTED_FORMAT). Pick the cable with
+    `soritong_audio::preferred_virtual_mic`, never by "name contains VB-Audio".
+    `cargo run -p soritong-audio --example loopback_probe` checks a real machine.
   - The HTML `hidden` attribute loses to any CSS `display:` rule, so a wizard showed a warning and
     its "all OK" twin at once. `ui/style.css` starts with `[hidden] { display: none !important; }`; keep it.
   - Korean IME in WebView2 (Microsoft IME): Enter on an uncommitted syllable fires `compositionend`

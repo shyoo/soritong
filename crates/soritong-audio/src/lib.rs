@@ -70,6 +70,21 @@ pub fn list_outputs() -> Result<Vec<OutputDevice>, AudioError> {
         .collect())
 }
 
+/// The output to send speech to for Zoom: a detected virtual mic, preferring plain VB-CABLE
+/// (`CABLE Input …`) over its A/B/Hi-Fi variants and over other families.
+pub fn preferred_virtual_mic(outputs: &[OutputDevice]) -> Option<&OutputDevice> {
+    let rank = |d: &OutputDevice| match d.virtual_mic.as_ref()?.family.as_str() {
+        "VB-CABLE" if d.name.starts_with("CABLE Input") => Some(0),
+        "VB-CABLE" => Some(1),
+        _ => Some(2),
+    };
+    outputs
+        .iter()
+        .filter_map(|d| rank(d).map(|r| (r, d)))
+        .min_by_key(|(r, _)| *r)
+        .map(|(_, d)| d)
+}
+
 /// Names of the capture (recording) endpoints, i.e. what Zoom offers as microphones.
 pub fn list_inputs() -> Result<Vec<String>, AudioError> {
     let host = cpal::default_host();
@@ -115,6 +130,35 @@ pub(crate) fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    fn dev(name: &str, family: Option<&str>) -> OutputDevice {
+        OutputDevice {
+            id: name.into(),
+            name: name.into(),
+            is_default: false,
+            virtual_mic: family.map(|f| VirtualMic {
+                family: f.into(),
+                zoom_mic_name: "x".into(),
+            }),
+        }
+    }
+
+    #[test]
+    fn prefers_plain_cable_input_over_16ch_and_variants() {
+        let outs = [
+            dev("CABLE In 16ch (VB-Audio Virtual Cable)", None),
+            dev("Speakers (Realtek(R) Audio)", None),
+            dev("CABLE-A Input (VB-Audio Cable A)", Some("VB-CABLE")),
+            dev("CABLE Input (VB-Audio Virtual Cable)", Some("VB-CABLE")),
+        ];
+        assert_eq!(
+            preferred_virtual_mic(&outs).unwrap().name,
+            "CABLE Input (VB-Audio Virtual Cable)"
+        );
+        assert!(preferred_virtual_mic(&outs[..2]).is_none());
+    }
+
     /// Lists this machine's devices. Needs the audio stack (not CI):
     /// `cargo test -p soritong-audio -- --ignored lists_real_devices --nocapture`
     #[test]
