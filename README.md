@@ -1,148 +1,118 @@
-# Soritong (소리통)
+# soritong (소리통)
 
-Type in Korean or English and have it spoken directly through your microphone in Zoom, Google Meet, Microsoft Teams, or Discord.
+Type Korean or English, press Enter, and soritong speaks it as your microphone in Zoom, Google
+Meet, Teams or Discord. You can join a call without saying a word aloud.
 
-![Soritong Main Window](docs/screenshots/main-window.png)
+![soritong main window](docs/screenshots/main-window.png)
 
----
+It was made for a monthly Korean book club on Zoom, which meets at 4-5 am for one member while
+the rest of the family is asleep. Speech feels more personal to the other members than chat text.
 
-## Overview
+[한국어 README](README.ko.md)
 
-Soritong is a lightweight Windows desktop application designed for people who need or prefer to participate in voice and video calls without speaking aloud. Whether managing vocal fatigue, working in a shared or quiet office, recovering from illness, or desiring speech assistance, Soritong lets you type naturally and speak instantly.
+## Download
 
-- **Direct Microphone Output**: Spoken audio is routed directly into your virtual microphone, so meeting participants hear clean speech without background noise.
-- **Simultaneous Monitoring**: Optionally hear everything you speak in your headphones so you always know what was heard.
-- **Bilingual Support**: Fluent text-to-speech for both Korean and English.
-- **Offline and Cloud Engines**: Choose between completely private offline models running on your GPU or high-fidelity cloud voices.
+Get the latest build from [Releases](https://github.com/shyoo/soritong/releases) (Windows 10/11, x64):
 
----
+- **`soritong-<version>-windows-x64-setup.exe`**: the installer. It installs for your user
+  account only, so it needs no administrator rights, and adds a Start menu entry and an uninstaller.
+- **`soritong-<version>-windows-x64-portable.zip`**: unzip it anywhere and run `soritong.exe`.
 
-## How It Works
+`SHA256SUMS.txt` lists the checksums of both files. The builds aren't code-signed yet, so
+Windows SmartScreen may warn on first run. Choose **More info**, then **Run anyway**.
+
+## How it works
+
+Zoom only reads sound from a recording device. Windows apps can't create one without a driver, so
+soritong uses the free [VB-CABLE](https://vb-audio.com/Cable/) virtual cable. soritong plays
+speech into the cable's input, and Zoom uses the cable's output as your microphone:
 
 ```
-+-----------------------------------------------------------+
-|                        Soritong                           |
-|  [ Type text in Korean / English ] ---> [ TTS Engine ]    |
-+-----------------------------------------------------------+
-                               |
-                               v
-                     [ VB-CABLE Input ]
-                               |
-              +----------------+----------------+
-              |                                 |
-              v                                 v
-      [ Meeting Apps ]                   [ Headphones ]
-   Zoom / Meet / Discord                Local Monitor
- (Microphone: CABLE Output)           (Hear what is said)
+ you type ──> soritong ──> TTS voice ──┬──> CABLE Input ══> CABLE Output ──> Zoom (microphone)
+                                       └──> your headphones (optional, to hear yourself)
 ```
 
-1. You type a sentence and press **Enter**.
-2. Soritong synthesizes the speech and plays it into a virtual audio cable (VB-CABLE).
-3. In Zoom or Google Meet, set your microphone to **CABLE Output (VB-Audio Virtual Cable)**.
-4. Meeting participants hear your typed words as clear spoken audio.
+Only soritong writes into the cable, so the people in the meeting never hear their own voices
+echoed back.
 
----
+### Setup wizard
 
-## Setup Wizard
+On first start, a wizard does the setup for you:
 
-When you first open Soritong, the built-in Setup Wizard guides you through configuring your audio devices:
+![setup wizard](docs/screenshots/wizard.png)
 
-![Soritong Setup Wizard](docs/screenshots/wizard-step-1.png)
+1. It downloads the official VB-CABLE installer (checksum pinned) and starts it. Windows
+   asks for administrator rights for the driver.
+2. It puts your speakers and microphone back to the defaults you had before, because VB-CABLE
+   sometimes takes them over.
+3. It points soritong at `CABLE Input`.
+4. It plays a test tone through the cable, to prove the sound arrives before you join a call.
+5. It shows exactly what to pick in Zoom, with a button to copy the microphone name.
 
-The wizard can:
-- Automatically download and launch the VB-CABLE installer with a single click.
-- Restore your default speakers and microphone so normal sound is not disturbed.
-- Run an audio loopback check to verify that speech reaches the microphone before joining a call.
-- Provide step-by-step instructions for selecting the microphone in Zoom.
+The wizard can be reopened from Settings at any time.
 
-You can reopen the setup wizard at any time from the app settings.
+**No-install option:** pick "Don't install anything" in the wizard. soritong then plays through
+your normal speakers, and in Zoom you share sound with **Share > Advanced > Computer audio**. It
+needs no driver, but any other sound on your PC is shared too, and you have to start it in
+each meeting.
 
----
+## Voices
 
-## TTS Engines
-
-Soritong supports five speech engines:
-
-| Engine | Type | Privacy & Requirements |
+| Engine | Where it runs | Notes |
 | :--- | :--- | :--- |
-| **Supertonic 3** | Local Offline | Runs entirely on your local PC via DirectML GPU acceleration. No internet connection, no API keys, complete privacy. |
-| **Edge Online** | Cloud (Free) | Natural Korean and English voices from Microsoft Edge. Fast, free, and does not require an API key. |
-| **ElevenLabs** | Cloud | Premium neural voices and custom voice clones. Requires your own ElevenLabs API key. |
-| **OpenAI** | Cloud | High-quality OpenAI speech voices (Alloy, Echo, Nova, etc.). Requires your own OpenAI API key. |
-| **Windows System** | Local Offline | Built-in Windows system voices (SAPI). Works offline with zero setup. |
+| **Supertonic 3** | On this PC | Free and private: no text leaves the PC. Korean and English. The ~400 MB model downloads on first use. Runs on the CPU. |
+| **Microsoft Edge voices** | Online | Free, no key, natural Korean and English. Uses the same unofficial service as Edge's Read Aloud, so it may break or be rate-limited. |
+| **ElevenLabs** | Online | Your own [voice clone](https://elevenlabs.io/voice-cloning) or any ElevenLabs voice. Needs your API key; uses your credits. Replays come from a local cache and cost nothing. |
+| **OpenAI-compatible** | Online or local | OpenAI's `/v1/audio/speech`, or a local server that speaks the same API (e.g. a voice-cloning model running on your own GPU). |
+| **Windows built-in voices** | On this PC | No setup, but robotic. Korean needs the Korean language with its text-to-speech feature installed in Windows Settings. |
 
-API keys for cloud engines are stored securely in the Windows Credential Manager.
+API keys are kept in Windows Credential Manager, never in a file.
 
----
+## Using it
 
-## Installation
+- **Enter** speaks the text. **Shift+Enter** adds a new line. **Esc** stops speaking. **Up arrow** brings back the last message.
+- **Ctrl+Alt+Space** brings soritong to the front from inside Zoom.
+- Click a quick phrase (네, 맞아요 / 잠시만요 / ...) to say it at once. Use the pencil to edit them.
+- Use the play button next to a message to say it again.
+- The headphones button sends a copy to your headphones, so you hear what the meeting hears.
 
-Download the latest version from the GitHub Releases page:
+### In Zoom
 
-- **Installer (`soritong-x.x.x-windows-x64-setup.exe`)**:
-  Recommended. Installs to your user profile without needing administrator rights. Adds a Start Menu shortcut and an uninstaller in Windows Settings.
-- **Portable ZIP (`soritong-x.x.x-windows-x64-portable.zip`)**:
-  No installation required. Unpack to any folder and run `soritong-app.exe`. Includes all necessary runtime libraries (`DirectML.dll` and Microsoft Visual C++ CRT).
+1. **Settings > Audio > Microphone**: `CABLE Output (VB-Audio Virtual Cable)`.
+2. Leave **Speaker** on your headphones.
+3. Turn off **Automatically adjust microphone volume**. If speech sounds choppy, set
+   **Suppress background noise** to **Low**.
 
-### System Requirements
+Google Meet, Teams and Discord work the same way: choose `CABLE Output (VB-Audio Virtual Cable)`
+as the microphone.
 
-- Windows 10 (version 1809 or higher) or Windows 11 (64-bit x64).
-- Microsoft Edge WebView2 Runtime (pre-installed on most Windows systems).
-- DirectX 12 compatible graphics card (for Supertonic 3 offline GPU acceleration).
+## Where things are kept
 
----
+- Settings: `%APPDATA%\soritong\settings.json`
+- Voice model and speech cache: `%LOCALAPPDATA%\soritong`
 
-## Keyboard Shortcuts
+Uninstalling leaves both folders, so a reinstall keeps your settings. Delete them to remove
+everything. VB-CABLE is uninstalled separately, with its own setup program.
 
-- **Enter**: Speak the current line immediately.
-- **Shift + Enter**: Insert a newline for multi-sentence messages.
-- **Ctrl + Alt + Space**: Global shortcut to bring the Soritong window into focus from any application.
+## Building from source
 
----
-
-## Using with Meeting Software
-
-### Zoom
-1. Open Zoom **Settings** > **Audio**.
-2. Set **Microphone** to `CABLE Output (VB-Audio Virtual Cable)`.
-3. Set **Speaker** to your normal headphones or speakers.
-4. Uncheck "Automatically adjust microphone volume".
-
-### Google Meet
-1. In Google Meet, click **More options** (...) > **Settings** > **Audio**.
-2. Set **Microphone** to `CABLE Output (VB-Audio Virtual Cable)`.
-3. Set **Speakers** to your normal headphones or speakers.
-
-### Discord
-1. Go to **User Settings** > **Voice & Video**.
-2. Set **Input Device** to `CABLE Output (VB-Audio Virtual Cable)`.
-3. Set **Output Device** to your normal headphones.
-
----
-
-## Building from Source
-
-For developers:
+You need Rust (stable, 1.85 or newer), Node.js 22 and the Visual Studio C++ build tools.
 
 ```powershell
-# Prerequisites: Rust 2024 toolchain, Node.js >= 22
 git clone https://github.com/shyoo/soritong.git
 cd soritong
-
-# Run tests
 cargo test --workspace
-
-# Run UI tests
-node --test crates/soritong-app/ui-tests/keys.test.mjs crates/soritong-app/ui-tests/wizard.test.mjs
-
-# Build release package
-pwsh -ExecutionPolicy Bypass -File scripts/release.ps1
+cargo run -p soritong-app                 # the app
+cargo run -p soritong-cli -- --help       # a command-line speaker, for testing engines
+pwsh -File scripts/release.ps1            # installer + portable ZIP in dist/ (needs tauri-cli)
 ```
 
----
+[AGENTS.md](AGENTS.md) covers how the code is organised and the checks to run, and
+[docs/PLAN.md](docs/PLAN.md) records the design and the options considered.
 
-## License & Third-Party Notices
+## Licence
 
-Soritong is open-source software licensed under the [Apache-2.0 License](LICENSE).
-
-Third-party model licenses and software notices (Supertonic 3 BigScience OpenRAIL-M, VB-CABLE, ONNX Runtime, DirectML, and Microsoft Visual C++ Runtime) are detailed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Apache-2.0, see [LICENSE](LICENSE). The Supertonic 3 model weights are not part of this repository.
+They are downloaded from Supertone under the BigScience OpenRAIL-M licence, which restricts harmful
+uses. VB-CABLE is donationware by
+VB-Audio and is downloaded from them, not bundled. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -7,15 +7,14 @@ This document describes the third-party components, their respective authors, an
 
 ## 1. Supertonic 3 (Text-to-Speech Model)
 
-- **Author / Provider**: Supertone Inc. / HYBE
-- **Repository / Weights**: Hugging Face (`Supertone/supertonic-3`)
+- **Author / Provider**: Supertone Inc.
+- **Repository / Weights**: Hugging Face (`supertone-oss-archive/supertonic-3`, pinned revision)
 - **License**: BigScience OpenRAIL-M License
 - **Notice**:
   Supertonic 3 model weights are downloaded at runtime upon user request and cached locally.
   Use of the Supertonic 3 model weights is governed by the BigScience OpenRAIL-M License
   (https://huggingface.co/spaces/bigscience/license).
-  Under this license, the model may not be used for prohibited use cases including illegal acts,
-  generating non-consensual biometric impersonation, discrimination, or intentional harm.
+  The license's use-based restrictions (Attachment A) apply to anyone using the model through soritong.
 
 ---
 
