@@ -4,11 +4,11 @@
 
 ## Where things stand
 
-- Release setup (2026-10-25): GitHub repo `shyoo/soritong`, **private until the owner flips it public**.
+- Release setup (2026-10-25): GitHub repo `shyoo/soritong`, public since 2026-10-26.
   CI (`.github/workflows/ci.yml`, windows-latest, ~19 min warm) runs the checks, builds the NSIS
   installer and portable ZIP (`scripts/release.ps1`) and smoke-installs it (`scripts/test-installer.ps1`).
   `release.yml` publishes from annotated `v*` tags on `main` with passing CI; see AGENTS.md "Releasing".
-  `v0.1.0-rc.1` published as a pre-release (2026-10-26, from `24e4d74`). Build provenance is skipped while the repo is private (GitHub refuses it for private personal repos). Installer: per-user NSIS, `DirectML.dll` + MSVC CRT next to the exe,
+  `v0.1.0` released 2026-10-26, promoted from `v0.1.0-rc.1` (`24e4d74`), which the owner tested. rc.1 has no build provenance (the repo was private then); releases from now on are attested. Installer: per-user NSIS, `DirectML.dll` + MSVC CRT next to the exe,
   WebView2 bootstrapper, identifier `com.shyoo.soritong`; not code-signed (SmartScreen warns); no auto-update.
   README.md / README.ko.md are user-facing, with screenshots from `scripts/capture-screenshots.mjs`.
 
@@ -77,6 +77,5 @@ PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Pat
 
 ## Next
 
-1. The owner tries the rc.1 installer from GitHub and makes the repo public; then `release-tag.ps1 -Action cut -Release promote` for `v0.1.0`.
-2. A live Zoom call with someone listening, and ElevenLabs with the owner's key.
-3. Later: code signing, auto-update, `docs/ZOOM_SETUP.md` with the two-device echo test for the no-install path.
+1. A live Zoom call with someone listening, and ElevenLabs with the owner's key.
+2. Later: code signing, auto-update, `docs/ZOOM_SETUP.md` with the two-device echo test for the no-install path.
