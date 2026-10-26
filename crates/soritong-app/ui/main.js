@@ -862,7 +862,7 @@ async function init() {
 
   // Check wizard status: if not completed or reboot pending, launch wizard automatically
   const wizState = await invoke("wizard_get_state").catch(() => null);
-  if (wizState && (!wizState.completed || wizState.reboot_pending)) {
+  if (wizState && (!wizState.wizard_completed || wizState.reboot_pending)) {
     openWizard();
   } else {
     input.focus();

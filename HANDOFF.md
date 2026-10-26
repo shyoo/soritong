@@ -4,6 +4,8 @@
 
 ## Where things stand
 
+- Fixed 2026-10-25: the wizard reopened at step 5 on every start (field-name mismatch between Rust and JS), and the window shrank on every start on mixed-DPI monitors. Both verified across two restarts on the owner's left (100%) monitor.
+
 - UI (2026-10-25): line pictograms instead of emoji (`ui/icons.css`); "On this PC"/"Online" badges instead of a lock; history as right-aligned chat bubbles with send time and a day divider; "Clear chat" (two clicks); Restore shows "done" only if Windows actually changed.
 
 PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Path B) are implemented in this branch.

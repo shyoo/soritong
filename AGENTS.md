@@ -56,6 +56,11 @@ Run these and make them pass before you report done:
   - COM objects from `CoCreateInstance` as `IUnknown` must be `query`'d for the interface before
     calling vtable slots. Calling `IPolicyConfig::SetDefaultEndpoint` through the raw IUnknown returned
     S_OK and changed nothing. Verify Windows state afterwards (`examples/defaults_probe.rs`).
+  - Tauri command results reach JS as plain JSON: a field the JS reads but Rust does not send is
+    just `undefined`, so no error appears. The wizard read `completed` while Rust sent
+    `wizard_completed`, and reopened on every start. Grep both sides when renaming a field.
+  - Window size is saved in logical pixels, and restored by moving first and then sizing. On mixed-DPI
+    monitors (owner: 150% main, 100% left) physical sizes shrank the window on every start.
   - `ui/` is compiled into the app binary: `scripts/run-app.ps1 -NoBuild` shows the old UI after a
     UI edit. Rebuild to see it.
   - The HTML `hidden` attribute loses to any CSS `display:` rule, so a wizard showed a warning and

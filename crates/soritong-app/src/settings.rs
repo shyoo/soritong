@@ -24,6 +24,8 @@ pub fn default_quick_phrases() -> Vec<String> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+/// Outer position in physical pixels (it selects the monitor); inner size in logical pixels, so it
+/// survives moving between monitors with different scaling.
 pub struct WindowGeometry {
     pub x: i32,
     pub y: i32,

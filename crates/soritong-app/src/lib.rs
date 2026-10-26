@@ -17,7 +17,7 @@ use settings::{Settings, SettingsStore, WindowGeometry};
 use soritong_audio::{OutputDevice, Player, SpeakEvent, Speaker};
 use soritong_core::{TtsEngine, TtsError, Voice};
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewWindow, WindowEvent};
+use tauri::{Emitter, LogicalSize, Manager, PhysicalPosition, WebviewWindow, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 const SPEAK_EVENT: &str = "speak-event";
@@ -323,6 +323,11 @@ fn show_and_focus(handle: &tauri::AppHandle) {
 
 /// Restores the saved geometry only if it is still on a connected monitor, so unplugging a
 /// second screen never leaves the window off-screen.
+///
+/// The position is physical (it picks the monitor) and the size logical. Moving first and sizing
+/// in logical units keeps the size right across monitors with different scaling: Windows rescales
+/// a window that crosses into another DPI, which used to shrink it by 1/1.5 on every start when
+/// it was sized on a 150% screen and then moved to a 100% one.
 fn restore_geometry(w: &WebviewWindow, g: WindowGeometry) {
     let on_screen = w.available_monitors().unwrap_or_default().iter().any(|m| {
         let (p, s) = (m.position(), m.size());
@@ -330,22 +335,32 @@ fn restore_geometry(w: &WebviewWindow, g: WindowGeometry) {
         cx >= p.x && cy >= p.y && cx < p.x + s.width as i32 && cy < p.y + s.height as i32
     });
     if on_screen {
-        let _ = w.set_size(PhysicalSize::new(g.width.max(300), g.height.max(300)));
         let _ = w.set_position(PhysicalPosition::new(g.x, g.y));
+        let _ = w.set_size(LogicalSize::new(
+            f64::from(g.width.max(MIN_WIDTH)),
+            f64::from(g.height.max(MIN_HEIGHT)),
+        ));
     }
 }
+
+/// `minWidth` / `minHeight` in tauri.conf.json.
+const MIN_WIDTH: u32 = 340;
+const MIN_HEIGHT: u32 = 380;
 
 fn geometry(w: &tauri::Window) -> Option<WindowGeometry> {
     if w.is_minimized().unwrap_or(false) || w.is_maximized().unwrap_or(false) {
         return None;
     }
     let p = w.outer_position().ok()?;
-    let s = w.inner_size().ok()?;
+    let s = w
+        .inner_size()
+        .ok()?
+        .to_logical::<f64>(w.scale_factor().ok()?);
     Some(WindowGeometry {
         x: p.x,
         y: p.y,
-        width: s.width,
-        height: s.height,
+        width: s.width.round() as u32,
+        height: s.height.round() as u32,
     })
 }
 
@@ -370,6 +385,11 @@ struct WizardViewState {
     current_defaults: Option<soritong_audio::defaults::AudioDefaultsSnapshot>,
     real_speakers: Vec<OutputDeviceItem>,
     real_mics: Vec<String>,
+    // Read by ui/wizard.js `decideStep`; without them every start looked unconfigured (step 5).
+    has_snapshot: bool,
+    soritong_configured: bool,
+    /// Not persisted: a reopened wizard runs the test again.
+    loopback_passed: bool,
 }
 
 #[tauri::command]
@@ -447,6 +467,9 @@ fn wizard_get_state(app: tauri::State<'_, App>) -> Result<WizardViewState, Strin
         current_defaults,
         real_speakers,
         real_mics,
+        has_snapshot: s.audio_snapshot.is_some(),
+        soritong_configured: s.mic_device.is_some(),
+        loopback_passed: false,
     })
 }
 
