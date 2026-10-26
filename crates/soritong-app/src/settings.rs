@@ -82,6 +82,22 @@ impl Default for Settings {
 }
 
 impl Settings {
+    /// Earlier builds could save VB-CABLE's `CABLE In 16ch`, which never opens. Move the mic to
+    /// the plain cable it shares a capture side with, and turn such a monitor off.
+    fn drop_unplayable_devices(&mut self) {
+        let bad = |d: &Option<String>| {
+            d.as_deref()
+                .is_some_and(soritong_audio::detect::is_unplayable)
+        };
+        if bad(&self.mic_device) {
+            self.mic_device = Some("CABLE Input (VB-Audio Virtual Cable)".into());
+        }
+        if bad(&self.monitor_device) {
+            self.monitor_device = None;
+            self.monitor_enabled = false;
+        }
+    }
+
     pub fn player_config(&self) -> soritong_audio::PlayerConfig {
         soritong_audio::PlayerConfig {
             mic: self.mic_device.clone(),
@@ -126,6 +142,8 @@ impl SettingsStore {
             },
             None => Settings::default(),
         };
+        let mut settings = settings;
+        settings.drop_unplayable_devices();
         Self { path, settings }
     }
 
@@ -157,6 +175,32 @@ impl SettingsStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn moves_off_the_unplayable_16ch_cable() {
+        let mut s = Settings {
+            mic_device: Some("CABLE In 16ch (VB-Audio Virtual Cable)".into()),
+            monitor_device: Some("CABLE In 16ch (VB-Audio Virtual Cable)".into()),
+            monitor_enabled: true,
+            ..Settings::default()
+        };
+        s.drop_unplayable_devices();
+        assert_eq!(
+            s.mic_device.as_deref(),
+            Some("CABLE Input (VB-Audio Virtual Cable)")
+        );
+        assert_eq!((s.monitor_device, s.monitor_enabled), (None, false));
+
+        let mut ok = Settings {
+            mic_device: Some("CABLE Input (VB-Audio Virtual Cable)".into()),
+            ..Settings::default()
+        };
+        ok.drop_unplayable_devices();
+        assert_eq!(
+            ok.mic_device.as_deref(),
+            Some("CABLE Input (VB-Audio Virtual Cable)")
+        );
+    }
 
     #[test]
     fn round_trips_through_disk() {

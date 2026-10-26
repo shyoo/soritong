@@ -43,6 +43,13 @@ fn split_name(name: &str) -> (&str, Option<&str>) {
 const STEREO_MIX: [&str; 4] = ["stereo mix", "스테레오 믹스", "stereomix", "what u hear"];
 
 /// Marks `render_name` as a virtual mic when its audio comes back out of one of `capture_names`.
+/// Render endpoints that cannot be opened in shared stereo mode and are hidden from the output
+/// list: VB-CABLE 45's `CABLE In 16ch` fails with AUDCLNT_E_UNSUPPORTED_FORMAT, while the plain
+/// `CABLE Input` feeds the same `CABLE Output`.
+pub fn is_unplayable(render_name: &str) -> bool {
+    render_name.starts_with("CABLE In 16ch")
+}
+
 pub fn detect_virtual_mic<S: AsRef<str>>(
     render_name: &str,
     capture_names: &[S],

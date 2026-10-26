@@ -49,6 +49,8 @@ PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Pat
 
 ## What is unproven
 
+- In-app loopback (`wizard_run_loopback` via CDP) passes on the owner's PC with their device settings (2026-10-25). `CABLE In 16ch` is now hidden, and old settings that saved it migrate to `CABLE Input`.
+
 - "Restore Windows Defaults" now works and is verified (owner's PC back on Realtek speakers, 2026-10-25). It used to report success without changing anything. Not yet clicked through the wizard UI after the fix.
 
 - Loopback via `CABLE Input` passes on the owner's PC (2026-10-25, 111 ms). The wizard had been testing `CABLE In 16ch`, which cannot be opened; fixed via `preferred_virtual_mic`. Not yet re-run through the wizard UI by the owner.

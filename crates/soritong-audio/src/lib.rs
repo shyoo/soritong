@@ -54,7 +54,11 @@ pub fn list_outputs() -> Result<Vec<OutputDevice>, AudioError> {
     let backend = |e: cpal::Error| AudioError::Backend(e.to_string());
     // The default device handle does not compare equal to its enumerated twin; its id does.
     let default = host.default_output_device().and_then(|d| d.id().ok());
-    let devices: Vec<cpal::Device> = host.output_devices().map_err(backend)?.collect();
+    let devices: Vec<cpal::Device> = host
+        .output_devices()
+        .map_err(backend)?
+        .filter(|d| !detect::is_unplayable(&device_name(d)))
+        .collect();
     let names: Vec<String> = devices.iter().map(device_name).collect();
     let captures = list_inputs()?;
     Ok(detect::assign_ids(&names)

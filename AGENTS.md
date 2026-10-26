@@ -48,8 +48,8 @@ Run these and make them pass before you report done:
   - CDP `Runtime.evaluate` shares one top-level scope across calls, so a second `const x` throws.
     Wrap snippets in `(() => { ... })()`.
   - VB-CABLE pack 45 adds `CABLE In 16ch`, listed before `CABLE Input`. It rejects its own reported
-    format in shared mode (OS error -2004287478, AUDCLNT_E_UNSUPPORTED_FORMAT). Pick the cable with
-    `soritong_audio::preferred_virtual_mic`, never by "name contains VB-Audio".
+    format in shared mode (OS error -2004287478, AUDCLNT_E_UNSUPPORTED_FORMAT). It is hidden from `list_outputs` (`detect::is_unplayable`), and saved settings are moved off it on load.
+    Pick the cable with `soritong_audio::preferred_virtual_mic`, never by "name contains VB-Audio".
     `cargo run -p soritong-audio --example loopback_probe` checks a real machine.
   - COM objects from `CoCreateInstance` as `IUnknown` must be `query`'d for the interface before
     calling vtable slots. Calling `IPolicyConfig::SetDefaultEndpoint` through the raw IUnknown returned
