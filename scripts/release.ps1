@@ -80,7 +80,7 @@ if (-not $SkipTests) {
 
 # 5. Build release binaries
 Step "Building release binaries (v$version)"
-Invoke-Cargo build --release --locked -p soritong-app -p soritong-cli
+Invoke-Cargo build --release --locked -p soritong-app
 
 # 6. Locate runtime DLLs
 Step 'Staging runtime DLLs'
@@ -161,9 +161,7 @@ $portableStaging = Join-Path $root "target\portable-staging-$version"
 if (Test-Path $portableStaging) { Remove-Item $portableStaging -Recurse -Force }
 New-Item -ItemType Directory -Force $portableStaging | Out-Null
 
-# Copy main binary as soritong.exe and soritong-app.exe
 Copy-Item $builtApp (Join-Path $portableStaging 'soritong.exe') -Force
-Copy-Item $builtApp (Join-Path $portableStaging 'soritong-app.exe') -Force
 
 # Copy all runtime DLLs
 Copy-Item $directMl (Join-Path $portableStaging 'DirectML.dll') -Force

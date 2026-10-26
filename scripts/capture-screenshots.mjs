@@ -1,75 +1,46 @@
-// Captures documentation screenshots using CDP:
-// 1. Wizard Step 1: Virtual Microphone Setup
-// 2. Main Window: Clean chat bubbles with Korean and English samples
+// Retakes the README screenshots from the real app: the wizard's first step, then the main window
+// after three messages spoken with the Edge voices into CABLE Input (monitor off, so nothing is
+// heard). Needs fresh settings, so that the wizard opens, and VB-CABLE installed.
 //
-// Usage:
-//   scripts/run-app.ps1
+//   Remove-Item -Recurse $env:TEMP\soritong-shots -ErrorAction Ignore
+//   scripts/run-app.ps1 -SettingsDir $env:TEMP\soritong-shots
 //   node scripts/capture-screenshots.mjs
 //   scripts/run-app.ps1 -Stop
 
 import { connect, sleep } from "./cdp.mjs";
-import { resolve } from "node:path";
 
 const cdp = await connect();
 const ev = (js) => cdp.eval(js);
+await sleep(1500);
 
-console.log("Connected to CDP");
+if (!(await ev(`!document.getElementById('wizard').hidden`))) {
+  console.error("The wizard is not open: start the app with fresh settings (see the header).");
+  process.exit(1);
+}
+await cdp.screenshot("docs/screenshots/wizard.png");
 
-const shotDir = resolve("docs/screenshots");
-const wizardShot = resolve(shotDir, "wizard-step-1.png");
-const mainShot = resolve(shotDir, "main-window.png");
-
-// 1. Open and capture Wizard Step 1
-console.log("Opening wizard for step 1 screenshot...");
 await ev(`(() => {
-  const reopen = document.getElementById('reopen-wizard');
-  if (reopen) reopen.click();
-  const w = document.getElementById('wizard');
-  if (w) w.hidden = false;
+  [...document.querySelectorAll('#wizard button')]
+    .find((b) => b.offsetParent && /Cancel/.test(b.textContent))?.click();
+  const set = (id, v) => {
+    const s = document.getElementById(id);
+    s.value = v;
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  set('engine', 'edge');
+  set('mic', 'CABLE Input (VB-Audio Virtual Cable)');
 })()`);
-await sleep(1000);
+await sleep(3000);
 
-console.log("Capturing wizard step 1 screenshot...");
-await cdp.screenshot(wizardShot);
-console.log("Saved", wizardShot);
-
-// 2. Close wizard
-await ev(`(() => {
-  const close = document.getElementById('close-wizard') || document.getElementById('wizard-path-cancel');
-  if (close) close.click();
-  const w = document.getElementById('wizard');
-  if (w) w.hidden = true;
-})()`);
-await sleep(600);
-
-// 3. Populate sample chat bubbles for main window screenshot
-await ev(`(() => {
-  const history = document.getElementById('history');
-  if (history) {
-    history.innerHTML = '';
-    const samples = [
-      { text: "안녕하세요, 오늘 회의 시작하겠습니다.", status: "done", time: "10:00" },
-      { text: "네, 공유해 주신 화면 잘 보입니다.", status: "done", time: "10:02" },
-      { text: "I agree with that point. Let us proceed with this plan.", status: "done", time: "10:05" },
-      { text: "다음 안건으로 넘어가겠습니다.", status: "speaking", time: "10:07" }
-    ];
-    for (const s of samples) {
-      const li = document.createElement('li');
-      li.className = 'history-item ' + s.status;
-      li.innerHTML = '<span class="text">' + s.text + '</span><span class="meta"><span class="status">' + s.status + '</span><span class="time">' + s.time + '</span></span>';
-      history.appendChild(li);
-    }
-  }
-  const input = document.getElementById('input');
-  if (input) {
-    input.value = '질문 있으신 분 계신가요?';
-  }
-})()`);
+const lastRow = () => ev(`[...document.querySelectorAll('#history li')].at(-1)?.textContent ?? ''`);
+const type = (text) => ev(`document.getElementById('input').focus()`).then(() => cdp.send("Input.insertText", { text }));
+for (const m of ["안녕하세요, 늦은 시간에 다들 반가워요.", "저는 이번 책에서 3장이 제일 좋았어요.", "I agree with that point."]) {
+  await type(m);
+  await cdp.key("Enter", { keyCode: 13 });
+  for (let i = 0; i < 60 && !/done/.test(await lastRow()); i++) await sleep(250);
+}
+await type("다음 모임은 언제인가요?");
 await sleep(500);
-
-console.log("Capturing main window screenshot...");
-await cdp.screenshot(mainShot);
-console.log("Saved", mainShot);
-
-cdp.close();
-console.log("Screenshots captured successfully.");
+await cdp.screenshot("docs/screenshots/main-window.png");
+console.log("saved docs/screenshots/wizard.png and main-window.png");
+process.exit(0);
