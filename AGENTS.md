@@ -47,6 +47,8 @@ Run these and make them pass before you report done:
   - Node 22 `node --test <directory>` fails with MODULE_NOT_FOUND. Pass the test files.
   - CDP `Runtime.evaluate` shares one top-level scope across calls, so a second `const x` throws.
     Wrap snippets in `(() => { ... })()`.
+  - The HTML `hidden` attribute loses to any CSS `display:` rule, so a wizard showed a warning and
+    its "all OK" twin at once. `ui/style.css` starts with `[hidden] { display: none !important; }`; keep it.
   - Korean IME in WebView2 (Microsoft IME): Enter on an uncommitted syllable fires `compositionend`
     first, then a plain Enter keydown (keyCode 13, `isComposing` false). See
     `crates/soritong-app/README.md` before touching `ui/keys.js`.

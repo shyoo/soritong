@@ -49,6 +49,8 @@ PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Pat
 
 ## What is unproven
 
+- Wizard step 4 "Restore Windows Defaults" on a real machine. On the owner's PC (2026-10-25) VB-CABLE had taken the default speaker; Listen was off. Step 4 used to show every warning together with its "OK" twin (CSS `display` beat `hidden`); fixed.
+
 - No human has listened to any engine's output yet.
 - Real elevated execution of `VBCABLE_Setup_x64.exe` was deliberately not run on this host machine to preserve environment state (mocked and tested via hermetic tests).
 - Zoom call with real participants listening to virtual mic output.

@@ -1,3 +1,6 @@
+/* `hidden` must win over any `display:` rule below (e.g. .callout is flex). */
+[hidden] { display: none !important; }
+
 :root {
   color-scheme: light dark;
   --bg: #fafafa;
