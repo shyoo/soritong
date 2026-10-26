@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "soritong",
-  "identifier": "com.soritong.app",
+  "version": "0.1.0",
+  "identifier": "com.shyoo.soritong",
   "build": {
     "frontendDist": "ui"
   },
@@ -25,7 +26,18 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": ["icons/icon.png", "icons/icon.ico"]
+    "targets": ["nsis"],
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "resources": {
+      "resources/*": ""
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
   }
 }

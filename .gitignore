@@ -1,5 +1,7 @@
 .warmstart/project.json
 /target/
+/dist/
 **/node_modules/
 *.onnx
 .env
+crates/soritong-app/resources/*.dll

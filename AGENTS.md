@@ -25,7 +25,7 @@ Run these and make them pass before you report done:
 
 - Work on a branch, never directly on `main`.
 - One coherent commit per task where it is safe to squash; explain *why*, not *what*.
-- ⛔ Never commit generated output, dependency directories, credentials, or anything gitignored.
+- Never commit generated output, dependency directories, credentials, or anything gitignored.
 - Update [`HANDOFF.md`](HANDOFF.md) in the same commit: what changed, and what is next.
 
 ## House rules
@@ -71,13 +71,13 @@ Run these and make them pass before you report done:
 
 ## Scripts (`scripts/`): run and inspect the app
 
-Reuse these instead of writing new drivers. They need Windows, Node ≥ 22 and a debug build.
+Reuse these instead of writing new drivers. They need Windows, Node >= 22 and a debug build.
 
 - `scripts/run-app.ps1 [-Demo] [-NoBuild] [-Stop]`: builds and starts the app with settings in
   `%TEMP%\soritong-try` (never your own) and the WebView2 page on CDP port 9333. `-Demo` adds a
   fake keyed cloud engine for the settings pane and Credential Manager. `-Stop` closes the app the
   way a user would, which saves the window geometry.
-- `node scripts/app-smoke.mjs [shot.png]`: speaks a message (queued → speaking → done), simulates
+- `node scripts/app-smoke.mjs [shot.png]`: speaks a message (queued -> speaking -> done), simulates
   IME composition, checks Shift+Enter, and takes a screenshot. Exits 1 on failure.
 - `scripts/cdp.mjs`: a dependency-free CDP client (`connect()`, `eval`, `key`, `send`,
   `screenshot`) for one-off checks.
@@ -86,3 +86,18 @@ Reuse these instead of writing new drivers. They need Windows, Node ≥ 22 and a
   keystrokes, so don't run it while someone is using the machine.
 - `scripts/hotkey-check.ps1`: minimises the window, presses Ctrl+Alt+Space, and checks the window
   comes back in front.
+- `scripts/release.ps1 [-SkipTests] [-StopRunning]`: builds release binaries, stages runtime DLLs
+  (`DirectML.dll`, MSVC CRT), packages the NSIS installer and portable ZIP into `dist/`, and computes
+  `SHA256SUMS.txt`.
+- `scripts/test-installer.ps1`: runs a silent install of the NSIS package to a sandbox target directory,
+  verifies registry entries, payloads and DLLs, briefly launches the app, and silently uninstalls.
+- `scripts/release-tag.ps1 [-Type patch|minor|major]`: creates a local annotated tag with change notes
+  ready to trigger `.github/workflows/release.yml`.
+
+## Releasing
+
+Cutting a new release:
+1. Ensure all checks pass and the workspace is clean on `main`.
+2. Generate an annotated release tag: `pwsh -ExecutionPolicy Bypass -File scripts/release-tag.ps1 -Type patch` (or `minor`/`major`).
+3. Push the tag to GitHub: `git push origin vX.Y.Z`.
+4. The `.github/workflows/release.yml` workflow triggers on `v*` tags, validates the tag against `main` and CI status, builds the NSIS installer and portable ZIP with provenance attestation, and creates a GitHub Release with the tag's release notes.

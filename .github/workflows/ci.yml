@@ -1,0 +1,68 @@
+name: CI
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          if ($LASTEXITCODE -ne 0) { throw 'Rust installation failed' }
+          rustup default stable-x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw 'Rust selection failed' }
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check code formatting
+        run: cargo fmt --all --check
+
+      - name: Lint workspace with Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Run workspace tests
+        run: cargo test --workspace --locked
+
+      - name: Run UI tests
+        run: node --test crates/soritong-app/ui-tests/keys.test.mjs crates/soritong-app/ui-tests/wizard.test.mjs
+
+      - name: Install tauri-cli
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-pc-windows-msvc.zip" -OutFile "$env:TEMP\binstall.zip"
+          Expand-Archive -Path "$env:TEMP\binstall.zip" -DestinationPath "$env:USERPROFILE\.cargo\bin" -Force
+          cargo binstall --no-confirm tauri-cli
+
+      - name: Package release installer and portable ZIP
+        run: ./scripts/release.ps1 -SkipTests
+
+      - name: Smoke test installer
+        run: ./scripts/test-installer.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: soritong-windows-x64
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
