@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>soritong</title>
+    <link rel="stylesheet" href="icons.css" />
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="main.js"></script>
   </head>
@@ -17,8 +18,8 @@
         <label class="grow"><span data-t="voice"></span>
           <select id="voice"></select>
         </label>
-        <button id="pin" class="icon toggle" data-title="pinTitle" aria-pressed="false">📌</button>
-        <button id="open-settings" class="icon" data-title="settingsTitle">⚙</button>
+        <button id="pin" class="icon toggle" data-title="pinTitle" aria-pressed="false"><span class="ico i-pin"></span></button>
+        <button id="open-settings" class="icon" data-title="settingsTitle"><span class="ico i-settings"></span></button>
       </header>
       <div id="badges" class="badges"></div>
 
@@ -37,8 +38,8 @@
         <label class="grow"><span data-t="micOut"></span>
           <select id="mic"></select>
         </label>
-        <button id="refresh" class="icon" data-title="refreshDevices">⟳</button>
-        <button id="monitor-toggle" class="icon toggle" data-title="monitorTitle" aria-pressed="false">🎧</button>
+        <button id="refresh" class="icon" data-title="refreshDevices"><span class="ico i-refresh"></span></button>
+        <button id="monitor-toggle" class="icon toggle" data-title="monitorTitle" aria-pressed="false"><span class="ico i-headphones"></span></button>
       </section>
       <p id="mic-hint" class="hint"></p>
       <section id="monitor-panel" class="panel" hidden>
@@ -53,16 +54,19 @@
         </label>
       </section>
 
+      <div id="history-bar" class="history-bar" hidden>
+        <button id="clear-history" type="button" class="link-btn"><span class="ico i-trash"></span><span id="clear-history-label" data-t="clearHistory"></span></button>
+      </div>
       <ol id="history" aria-live="polite"></ol>
 
       <section class="phrases">
         <div id="chips" class="chips"></div>
-        <button id="edit-phrases" class="icon" data-title="editPhrases">✎</button>
+        <button id="edit-phrases" class="icon" data-title="editPhrases"><span class="ico i-pencil"></span></button>
       </section>
 
       <div class="compose">
         <textarea id="input" rows="2" autofocus data-placeholder="placeholder"></textarea>
-        <button id="stop" class="icon" data-title="stop">■</button>
+        <button id="stop" class="icon" data-title="stop"><span class="ico i-stop"></span></button>
       </div>
       <p class="hint" data-t="keyHint"></p>
     </main>
@@ -71,7 +75,7 @@
       <div class="sheet">
         <header class="row">
           <h2 class="grow" data-t="settings"></h2>
-          <button id="close-settings" class="icon" data-title="close">✕</button>
+          <button id="close-settings" class="icon" data-title="close"><span class="ico i-close"></span></button>
         </header>
         <fieldset>
           <legend data-t="virtualMicSetup"></legend>
@@ -104,7 +108,7 @@
             <h2 data-t="wizardTitle"></h2>
             <span id="wizard-step-indicator" class="hint"></span>
           </div>
-          <button id="close-wizard" class="icon" data-title="close">✕</button>
+          <button id="close-wizard" class="icon" data-title="close"><span class="ico i-close"></span></button>
         </header>
 
         <div id="wizard-progress" class="wizard-progress">

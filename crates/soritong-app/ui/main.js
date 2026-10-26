@@ -21,6 +21,7 @@ const el = (tag, props = {}, ...children) => {
   e.append(...children);
   return e;
 };
+const icon = (name) => el("span", { className: `ico i-${name}` });
 
 const MAX_HISTORY = 100;
 
@@ -51,8 +52,9 @@ function applyStrings() {
 }
 
 function showError(msg) {
-  const li = el("li", {}, el("span", { className: "text" }, el("span", { className: "error", textContent: msg })));
+  const li = el("li", { className: "notice" }, icon("error"), el("span", { textContent: msg }));
   $("history").append(li);
+  syncHistoryBar();
   li.scrollIntoView({ block: "end" });
 }
 
@@ -69,7 +71,7 @@ const currentEngine = () => state.engines.find((e) => e.id === state.engine);
 function renderEngines() {
   const sel = $("engine");
   sel.replaceChildren(
-    ...state.engines.map((e) => el("option", { value: e.id, textContent: e.name + (e.offline ? " 🔒" : "") })),
+    ...state.engines.map((e) => el("option", { value: e.id, textContent: e.name + (e.offline ? ` (${t("offlineOption")})` : "") })),
   );
   sel.value = state.engine ?? "";
 }
@@ -78,10 +80,12 @@ function renderBadges() {
   const e = currentEngine();
   const v = state.voices.find((v) => v.id === $("voice").value);
   const badges = [];
-  if (e?.offline) badges.push(t("offline"));
-  if (e?.needs_model_download) badges.push(t("needsModel"));
-  if (v?.kind === "cloned") badges.push("🧬 " + t("cloned"));
-  $("badges").replaceChildren(...badges.map((b) => el("span", { className: "badge", textContent: b })));
+  if (e) badges.push(e.offline ? ["computer", t("offline")] : ["cloud", t("online")]);
+  if (e?.needs_model_download) badges.push(["download", t("needsModel")]);
+  if (v?.kind === "cloned") badges.push(["person", t("cloned")]);
+  $("badges").replaceChildren(
+    ...badges.map(([i, text]) => el("span", { className: "badge" }, icon(i), el("span", { textContent: text }))),
+  );
 }
 
 async function loadVoices() {
@@ -98,7 +102,7 @@ async function loadVoices() {
     state.voices = voices;
     sel.replaceChildren(
       ...voices.map((v) =>
-        el("option", { value: v.id, textContent: v.name + (v.kind === "cloned" ? " 🧬" : "") }),
+        el("option", { value: v.id, textContent: v.name + (v.kind === "cloned" ? ` (${t("cloned")})` : "") }),
       ),
     );
     if (!voices.length) sel.append(el("option", { value: "", textContent: t("noVoices") }));
@@ -227,23 +231,74 @@ async function speak(text) {
   }
 }
 
+const lang = () => document.documentElement.lang || navigator.language;
+const dayKey = (d) => d.toDateString();
+let lastDay = null;
+
+function dayLabel(d) {
+  if (dayKey(d) === dayKey(new Date())) return t("today");
+  return d.toLocaleDateString(lang(), { month: "long", day: "numeric", weekday: "short" });
+}
+
+// One sent message as a chat bubble: text on top; send time, status and actions underneath.
 function addHistory({ id, text, engine, voice }) {
+  const list = $("history");
+  const now = new Date();
+  if (lastDay !== dayKey(now)) {
+    lastDay = dayKey(now);
+    list.append(el("li", { className: "day", textContent: dayLabel(now) }));
+  }
   const status = el("span", { className: "status queued", textContent: t("queued") });
-  const replay = el("button", { textContent: "▶", title: t("replay") });
-  const edit = el("button", { textContent: "✎", title: t("edit") });
-  const body = el("span", { className: "text", textContent: text });
-  const li = el("li", {}, body, status, replay, edit);
+  const replay = el("button", { className: "msg-action", title: t("replay") }, icon("play"));
+  const edit = el("button", { className: "msg-action", title: t("edit") }, icon("pencil"));
+  replay.setAttribute("aria-label", t("replay"));
+  edit.setAttribute("aria-label", t("edit"));
+  const time = el("time", {
+    dateTime: now.toISOString(),
+    textContent: now.toLocaleTimeString(lang(), { hour: "numeric", minute: "2-digit" }),
+  });
+  const body = el("div", { className: "bubble" }, el("span", { className: "text", textContent: text }));
+  const li = el("li", { className: "msg" }, body, el("div", { className: "meta" }, time, status, replay, edit));
   replay.addEventListener("click", () => invoke("speak", { text, engine, voice }).catch((e) => showError(String(e))));
   edit.addEventListener("click", () => {
     input.value = text;
     input.focus();
   });
   state.history.set(id, { li, status, body });
-  const list = $("history");
   list.append(li);
   while (list.children.length > MAX_HISTORY) list.firstElementChild.remove();
+  syncHistoryBar();
   li.scrollIntoView({ block: "end" });
 }
+
+function syncHistoryBar() {
+  $("history-bar").hidden = !$("history").children.length;
+}
+
+// Two clicks to clear: the first asks, and the question times out back to the plain button.
+let clearArmed = null;
+$("clear-history").addEventListener("click", () => {
+  const label = $("clear-history-label");
+  if (!clearArmed) {
+    label.textContent = t("clearConfirm");
+    $("clear-history").classList.add("armed");
+    clearArmed = setTimeout(() => {
+      clearArmed = null;
+      label.textContent = t("clearHistory");
+      $("clear-history").classList.remove("armed");
+    }, 3000);
+    return;
+  }
+  clearTimeout(clearArmed);
+  clearArmed = null;
+  $("history").replaceChildren();
+  state.history.clear();
+  lastDay = null;
+  label.textContent = t("clearHistory");
+  $("clear-history").classList.remove("armed");
+  syncHistoryBar();
+  input.focus();
+});
 
 function onSpeakEvent(ev) {
   if (ev.type === "queued") return addHistory(ev);
@@ -253,7 +308,8 @@ function onSpeakEvent(ev) {
   h.status.className = `status ${s}`;
   h.status.textContent = t(s);
   if (ev.type === "failed") {
-    h.body.querySelector(".error")?.remove();
+    h.li.querySelector(".error")?.remove();
+    h.li.classList.add("failed");
     h.body.append(el("span", { className: "error", textContent: ev.message }));
   }
   if (ev.type !== "started") state.history.delete(ev.id); // terminal; a replay gets a new id
@@ -322,7 +378,7 @@ function renderPhrases() {
   }
   $("chips").replaceChildren(...chips);
   const btn = $("edit-phrases");
-  btn.textContent = state.editingPhrases ? "✓" : "✎";
+  btn.replaceChildren(icon(state.editingPhrases ? "check" : "pencil"));
   btn.title = t(state.editingPhrases ? "donePhrases" : "editPhrases");
 }
 
@@ -660,9 +716,12 @@ function setupWizardController() {
     wizardController.setStep(STEP.INSTALL);
   });
   $("wizard-restore-btn").addEventListener("click", async () => {
+    $("restore-status").className = "status";
     $("restore-status").textContent = "...";
-    await wizardController.restoreDefaults();
-    $("restore-status").textContent = t("restoreDone");
+    const report = await wizardController.restoreDefaults();
+    // restoreDefaults shows its own error and returns null when Windows refused.
+    $("restore-status").textContent = report ? t("restoreDone") : "";
+    if (report) $("restore-status").className = "status status-ok";
   });
   $("wizard-safeguard-next").addEventListener("click", () => {
     wizardController.setStep(STEP.CONFIGURE);

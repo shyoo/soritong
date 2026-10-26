@@ -4,6 +4,8 @@
 
 ## Where things stand
 
+- UI (2026-10-25): line pictograms instead of emoji (`ui/icons.css`); "On this PC"/"Online" badges instead of a lock; history as right-aligned chat bubbles with send time and a day divider; "Clear chat" (two clicks); Restore shows "done" only if Windows actually changed.
+
 PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Path B) are implemented in this branch.
 
 - **Virtual Mic Setup Wizard (`soritong-app` UI & Rust backend)**:
@@ -48,6 +50,8 @@ PLAN §6 pieces 1–6 and the Windows-first virtual microphone setup wizard (Pat
   - Live CDP verification (`scripts/wizard-smoke.mjs` against running app): walked all 7 wizard steps, verified snapshot display, safeguarding, configure, copy button, settings modal reopening, and backend state persistence.
 
 ## What is unproven
+
+- Owner reported (2026-10-25) that partial Hangul (ㅇ, 아) did not show while typing in their normal soritong. It could not be reproduced: in 3 real-IME tests by the owner in a test window (same monitor and size, also after sending a message), every composition step showed and reached the box. Waiting to hear what preceded it if it recurs.
 
 - In-app loopback (`wizard_run_loopback` via CDP) passes on the owner's PC with their device settings (2026-10-25). `CABLE In 16ch` is now hidden, and old settings that saved it migrate to `CABLE Input`.
 

@@ -34,6 +34,8 @@ Run these and make them pass before you report done:
   change their signatures in an engine or app change. Add to them, or change them together with every caller.
 - One crate per engine (`crates/soritong-engine-<name>`), errors mapped to `soritong_core::TtsError`.
 - Unit tests sit next to the code (`#[cfg(test)]`).
+- UI: no emoji, anywhere (owner's rule). Use the line pictograms in `ui/icons.css` (`<span class="ico i-NAME">`,
+  or `var(--i-NAME)` in CSS). Add new ones there as 24px stroke SVGs.
 - Pitfalls: the things that have bitten somebody here before. An entry earns its place by having
   cost a real debugging session; delete it when the pitfall becomes impossible.
   - Example names are global across the workspace: two crates with `examples/say.rs` link to the
@@ -54,6 +56,8 @@ Run these and make them pass before you report done:
   - COM objects from `CoCreateInstance` as `IUnknown` must be `query`'d for the interface before
     calling vtable slots. Calling `IPolicyConfig::SetDefaultEndpoint` through the raw IUnknown returned
     S_OK and changed nothing. Verify Windows state afterwards (`examples/defaults_probe.rs`).
+  - `ui/` is compiled into the app binary: `scripts/run-app.ps1 -NoBuild` shows the old UI after a
+    UI edit. Rebuild to see it.
   - The HTML `hidden` attribute loses to any CSS `display:` rule, so a wizard showed a warning and
     its "all OK" twin at once. `ui/style.css` starts with `[hidden] { display: none !important; }`; keep it.
   - Korean IME in WebView2 (Microsoft IME): Enter on an uncommitted syllable fires `compositionend`
