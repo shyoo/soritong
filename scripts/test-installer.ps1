@@ -1,6 +1,6 @@
 # Integration smoke test for soritong NSIS installer.
 [CmdletBinding()]
-param([string]$Version)
+param([string]$Version = $env:SORITONG_VERSION)
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
