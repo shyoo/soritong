@@ -51,6 +51,9 @@ Run these and make them pass before you report done:
     format in shared mode (OS error -2004287478, AUDCLNT_E_UNSUPPORTED_FORMAT). Pick the cable with
     `soritong_audio::preferred_virtual_mic`, never by "name contains VB-Audio".
     `cargo run -p soritong-audio --example loopback_probe` checks a real machine.
+  - COM objects from `CoCreateInstance` as `IUnknown` must be `query`'d for the interface before
+    calling vtable slots. Calling `IPolicyConfig::SetDefaultEndpoint` through the raw IUnknown returned
+    S_OK and changed nothing. Verify Windows state afterwards (`examples/defaults_probe.rs`).
   - The HTML `hidden` attribute loses to any CSS `display:` rule, so a wizard showed a warning and
     its "all OK" twin at once. `ui/style.css` starts with `[hidden] { display: none !important; }`; keep it.
   - Korean IME in WebView2 (Microsoft IME): Enter on an uncommitted syllable fires `compositionend`

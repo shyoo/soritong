@@ -165,7 +165,12 @@ mod imp {
                 CoCreateInstance(&CLSID_POLICY_CONFIG_CLIENT, None, CLSCTX_ALL)
                     .map_err(|e| format!("CoCreateInstance PolicyConfigClient: {e}"))?;
 
-            let policy_ptr = unk.as_raw();
+            // The object's IUnknown vtable is not IPolicyConfig's: calling slot 13 on it "succeeds"
+            // and changes nothing. Ask for the interface explicitly.
+            let mut policy_ptr: *mut c_void = std::ptr::null_mut();
+            unk.query(&IID_IPOLICY_CONFIG, &mut policy_ptr)
+                .ok()
+                .map_err(|e| format!("IPolicyConfig not available: {e}"))?;
             let vtbl = *(policy_ptr as *mut *mut IPolicyConfigVtbl);
 
             let roles = match role {
@@ -175,13 +180,35 @@ mod imp {
                 AudioRole::All => vec![eConsole, eMultimedia, eCommunications],
             };
 
-            for r in roles {
-                let res = ((*vtbl).SetDefaultEndpoint)(policy_ptr, pcwstr, r);
+            let mut result = Ok(());
+            for r in &roles {
+                let res = ((*vtbl).SetDefaultEndpoint)(policy_ptr, pcwstr, *r);
                 if res.is_err() {
-                    return Err(format!("SetDefaultEndpoint failed for {r:?}: {res:?}"));
+                    result = Err(format!("SetDefaultEndpoint failed for {r:?}: {res:?}"));
+                    break;
                 }
             }
+            ((*vtbl).base__.Release)(policy_ptr);
+            result?;
 
+            // Trust Windows, not the HRESULT: report failure unless the default really changed.
+            let now = get_current_defaults()?;
+            let is_target = |e: &Option<EndpointSnapshot>| {
+                e.as_ref().is_some_and(|e| e.endpoint_id == endpoint_id)
+            };
+            let changed = roles.iter().all(|r| {
+                let (render, capture) = match *r {
+                    x if x == eConsole => (&now.render_console, &now.capture_console),
+                    x if x == eMultimedia => (&now.render_multimedia, &now.capture_multimedia),
+                    _ => (&now.render_communications, &now.capture_communications),
+                };
+                is_target(render) || is_target(capture)
+            });
+            if !changed {
+                return Err(format!(
+                    "Windows did not switch the default device to {endpoint_id}"
+                ));
+            }
             Ok(())
         }
     }
