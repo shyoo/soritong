@@ -1,0 +1,13 @@
+[package]
+name = "soritong-engine-elevenlabs"
+description = "ElevenLabs TTS engine implementation for soritong."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+soritong-core = { workspace = true }
+serde = { workspace = true }
+serde_json = "1"
+ureq = { version = "3", features = ["json"] }

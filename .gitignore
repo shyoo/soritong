@@ -1,1 +1,5 @@
 .warmstart/project.json
+/target/
+**/node_modules/
+*.onnx
+.env

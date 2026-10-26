@@ -1,0 +1,22 @@
+[package]
+name = "soritong-engine-supertonic"
+description = "Supertonic 3 (Supertone) offline TTS engine for soritong, via ONNX Runtime."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+soritong-core.workspace = true
+serde.workspace = true
+sha2.workspace = true
+# Pinned exactly: ort 2.0 is still a release candidate and breaks API between rcs.
+ort = "=2.0.0-rc.15"
+serde_json = "1"
+unicode-normalization = "0.1"
+regex = "1"
+rand = "0.9"
+rand_distr = "0.5"
+ureq = "3"
+dirs = "7"
+log = "0.4"

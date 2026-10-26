@@ -1,0 +1,43 @@
+[package]
+name = "soritong-app"
+description = "The soritong desktop app: type Korean or English and it is spoken into Zoom as your microphone."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+default-run = "soritong-app"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+soritong-core.workspace = true
+soritong-audio.workspace = true
+serde.workspace = true
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-global-shortcut = "2"
+keyring = { version = "3", features = ["windows-native", "apple-native"] }
+dirs = "6"
+soritong-engine-edge = { path = "../soritong-engine-edge" }
+soritong-engine-elevenlabs = { path = "../soritong-engine-elevenlabs" }
+soritong-engine-openai = { path = "../soritong-engine-openai" }
+soritong-engine-supertonic = { path = "../soritong-engine-supertonic" }
+soritong-engine-system = { path = "../soritong-engine-system" }
+zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
+sha2.workspace = true
+ureq = "3"
+tempfile = "3"
+
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62"
+features = [
+    "Win32_Foundation",
+    "Win32_UI_Shell",
+    "Win32_System_Threading",
+    "Win32_System_Registry",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[dev-dependencies]
+tempfile = "3"

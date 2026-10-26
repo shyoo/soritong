@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>soritong</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+    <main id="app">
+      <header class="row">
+        <label class="grow"><span data-t="engine"></span>
+          <select id="engine"></select>
+        </label>
+        <label class="grow"><span data-t="voice"></span>
+          <select id="voice"></select>
+        </label>
+        <button id="pin" class="icon toggle" data-title="pinTitle" aria-pressed="false">📌</button>
+        <button id="open-settings" class="icon" data-title="settingsTitle">⚙</button>
+      </header>
+      <div id="badges" class="badges"></div>
+
+      <section id="download-panel" class="panel download-panel" hidden>
+        <div class="row">
+          <button id="download-btn" class="download-btn" data-t="downloadModel"></button>
+          <span id="download-status" class="status"></span>
+        </div>
+        <div id="download-progress-container" class="download-progress-row" hidden>
+          <progress id="download-progress" value="0" max="100"></progress>
+          <span id="download-percent" class="hint">0%</span>
+        </div>
+      </section>
+
+      <section class="row">
+        <label class="grow"><span data-t="micOut"></span>
+          <select id="mic"></select>
+        </label>
+        <button id="refresh" class="icon" data-title="refreshDevices">⟳</button>
+        <button id="monitor-toggle" class="icon toggle" data-title="monitorTitle" aria-pressed="false">🎧</button>
+      </section>
+      <p id="mic-hint" class="hint"></p>
+      <section id="monitor-panel" class="panel" hidden>
+        <label><span data-t="monitorDevice"></span>
+          <select id="monitor-device"></select>
+        </label>
+        <label class="slider"><span data-t="monitorVolume"></span>
+          <input id="monitor-volume" type="range" min="0" max="1.5" step="0.05" />
+        </label>
+        <label class="slider"><span data-t="micVolume"></span>
+          <input id="mic-volume" type="range" min="0" max="1.5" step="0.05" />
+        </label>
+      </section>
+
+      <ol id="history" aria-live="polite"></ol>
+
+      <section class="phrases">
+        <div id="chips" class="chips"></div>
+        <button id="edit-phrases" class="icon" data-title="editPhrases">✎</button>
+      </section>
+
+      <div class="compose">
+        <textarea id="input" rows="2" autofocus data-placeholder="placeholder"></textarea>
+        <button id="stop" class="icon" data-title="stop">■</button>
+      </div>
+      <p class="hint" data-t="keyHint"></p>
+    </main>
+
+    <div id="settings" class="overlay" hidden>
+      <div class="sheet">
+        <header class="row">
+          <h2 class="grow" data-t="settings"></h2>
+          <button id="close-settings" class="icon" data-title="close">✕</button>
+        </header>
+        <fieldset>
+          <legend data-t="virtualMicSetup"></legend>
+          <p class="hint" data-t="virtualMicSetupHelp"></p>
+          <button id="reopen-wizard" type="button" data-t="setupVirtualMic"></button>
+        </fieldset>
+        <fieldset>
+          <legend data-t="general"></legend>
+          <label><span data-t="shortcut"></span>
+            <input id="shortcut" type="text" spellcheck="false" />
+          </label>
+          <p class="hint" data-t="shortcutHelp"></p>
+          <button id="save-shortcut" data-t="save"></button>
+          <span id="shortcut-status" class="status"></span>
+        </fieldset>
+        <div id="engine-settings"></div>
+        <p id="settings-path" class="hint"></p>
+        <fieldset class="about">
+          <legend data-t="about"></legend>
+          <p class="hint" data-t="supertonicAttribution"></p>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- Wizard Overlay -->
+    <div id="wizard" class="overlay" hidden>
+      <div class="sheet wizard-sheet">
+        <header class="row wizard-header">
+          <div class="grow">
+            <h2 data-t="wizardTitle"></h2>
+            <span id="wizard-step-indicator" class="hint"></span>
+          </div>
+          <button id="close-wizard" class="icon" data-title="close">✕</button>
+        </header>
+
+        <div id="wizard-progress" class="wizard-progress">
+          <div class="progress-dot" data-step="0">1</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="1">2</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="2">3</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="3">4</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="4">5</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="5">6</div>
+          <div class="progress-line"></div>
+          <div class="progress-dot" data-step="6">7</div>
+        </div>
+
+        <div id="wizard-body" class="wizard-body">
+          <!-- Step 0: Choose Path -->
+          <div id="wizard-step-path" class="wizard-step-pane" hidden>
+            <p class="wizard-step-desc" data-t="pathPrompt"></p>
+            <div class="wizard-cards">
+              <div class="wizard-card selected" id="card-path-virtual">
+                <div class="wizard-card-header">
+                  <strong data-t="pathVirtualMicTitle"></strong>
+                  <span class="badge" data-t="pathVirtualMicBadge"></span>
+                </div>
+                <p class="hint" data-t="pathVirtualMicDesc"></p>
+              </div>
+              <div class="wizard-card" id="card-path-direct">
+                <div class="wizard-card-header">
+                  <strong data-t="pathDirectTitle"></strong>
+                  <span class="badge" data-t="pathDirectBadge"></span>
+                </div>
+                <p class="hint" data-t="pathDirectDesc"></p>
+              </div>
+            </div>
+            <div class="wizard-actions">
+              <button id="wizard-path-cancel" type="button" data-t="cancel"></button>
+              <button id="wizard-path-continue" type="button" class="primary" data-t="continue"></button>
+            </div>
+          </div>
+
+          <!-- Step 1: Snapshot -->
+          <div id="wizard-step-snapshot" class="wizard-step-pane" hidden>
+            <h3 data-t="snapshotTitle"></h3>
+            <p class="hint" data-t="snapshotDesc"></p>
+            <div class="callout callout-info">
+              <div id="snapshot-render-text" class="device-text"></div>
+              <div id="snapshot-capture-text" class="device-text"></div>
+            </div>
+            <p class="hint status-ok" data-t="snapshotSuccess"></p>
+            <div class="wizard-actions">
+              <button id="wizard-snapshot-back" type="button" data-t="back"></button>
+              <button id="wizard-snapshot-next" type="button" class="primary" data-t="next"></button>
+            </div>
+          </div>
+
+          <!-- Step 2: Install VB-CABLE -->
+          <div id="wizard-step-install" class="wizard-step-pane" hidden>
+            <h3 data-t="installCableTitle"></h3>
+            <div id="cable-already-installed" class="callout callout-success" hidden>
+              <span data-t="cableInstalled"></span>
+            </div>
+            <div id="cable-needs-install">
+              <p class="hint" data-t="cableNotInstalled"></p>
+              <div class="callout callout-warning">
+                <span data-t="installUacHint"></span>
+              </div>
+              <div class="action-row">
+                <button id="wizard-install-btn" type="button" class="primary" data-t="installCableBtn"></button>
+                <a id="wizard-manual-link" href="#" class="link-btn" data-t="manualDownloadLink"></a>
+              </div>
+              <p class="hint" data-t="manualDownloadHint"></p>
+              <div id="wizard-install-status" class="status"></div>
+            </div>
+            <div id="wizard-reboot-row" class="reboot-box">
+              <button id="wizard-reboot-btn" type="button" data-t="rebootOptionBtn"></button>
+              <p class="hint" data-t="rebootPending"></p>
+            </div>
+            <div class="wizard-actions">
+              <button id="wizard-install-back" type="button" data-t="back"></button>
+              <button id="wizard-install-next" type="button" class="primary" data-t="cableInstallDoneBtn"></button>
+            </div>
+          </div>
+
+          <!-- Step 3: Safeguard & Restore Defaults -->
+          <div id="wizard-step-safeguard" class="wizard-step-pane" hidden>
+            <h3 data-t="safeguardTitle"></h3>
+            <p class="hint" data-t="safeguardDesc"></p>
+
+            <div id="listen-device-warning" class="callout callout-danger" hidden>
+              <span data-t="listenWarning"></span>
+            </div>
+            <div id="listen-device-ok" class="callout callout-success">
+              <span data-t="listenOk"></span>
+            </div>
+
+            <div id="defaults-hijacked-warning" class="callout callout-warning" hidden>
+              <p data-t="restoreNeeded"></p>
+              <button id="wizard-restore-btn" type="button" class="primary" data-t="restoreBtn"></button>
+            </div>
+            <div id="defaults-ok" class="callout callout-success">
+              <span data-t="defaultsOk"></span>
+            </div>
+            <div id="restore-status" class="status"></div>
+
+            <div class="wizard-actions">
+              <button id="wizard-safeguard-back" type="button" data-t="back"></button>
+              <button id="wizard-safeguard-next" type="button" class="primary" data-t="next"></button>
+            </div>
+          </div>
+
+          <!-- Step 4: Configure Soritong -->
+          <div id="wizard-step-configure" class="wizard-step-pane" hidden>
+            <h3 data-t="configSoritongTitle"></h3>
+            <p class="hint" data-t="configSoritongDesc"></p>
+
+            <div class="panel">
+              <label><span data-t="micOutLabel"></span>
+                <input id="wizard-cfg-mic" type="text" readonly />
+              </label>
+              <label class="checkbox-label">
+                <input id="wizard-cfg-monitor-enable" type="checkbox" checked />
+                <span data-t="enableMonitorLabel"></span>
+              </label>
+              <label id="wizard-cfg-monitor-select-label"><span data-t="monitorDeviceSelect"></span>
+                <select id="wizard-cfg-monitor-device"></select>
+              </label>
+            </div>
+
+            <div class="wizard-actions">
+              <button id="wizard-configure-back" type="button" data-t="back"></button>
+              <button id="wizard-configure-next" type="button" class="primary" data-t="applyConfigBtn"></button>
+            </div>
+          </div>
+
+          <!-- Step 5: Loopback Test -->
+          <div id="wizard-step-loopback" class="wizard-step-pane" hidden>
+            <h3 data-t="loopbackTitle"></h3>
+            <p class="hint" data-t="loopbackDesc"></p>
+
+            <div class="loopback-card">
+              <div class="action-row">
+                <button id="wizard-loopback-btn" type="button" class="primary" data-t="runLoopbackBtn"></button>
+                <span id="wizard-loopback-status" class="status"></span>
+              </div>
+              <div id="wizard-loopback-meter-container" class="meter-container">
+                <div id="wizard-loopback-meter-bar" class="meter-bar" style="width: 0%"></div>
+              </div>
+              <div id="wizard-loopback-details" class="hint"></div>
+            </div>
+
+            <div class="wizard-actions">
+              <button id="wizard-loopback-back" type="button" data-t="back"></button>
+              <button id="wizard-loopback-skip" type="button" data-t="skipLoopbackBtn"></button>
+              <button id="wizard-loopback-next" type="button" class="primary" data-t="next" disabled></button>
+            </div>
+          </div>
+
+          <!-- Step 6: Zoom Guide -->
+          <div id="wizard-step-zoom" class="wizard-step-pane" hidden>
+            <h3 data-t="zoomGuideTitle"></h3>
+            <p class="hint" data-t="zoomGuideSubtitle"></p>
+
+            <div class="zoom-steps-box">
+              <div class="zoom-step" data-t="zoomStep1"></div>
+              <div class="zoom-step">
+                <span data-t="zoomStep2Label"></span>
+                <div class="zoom-copy-row">
+                  <code id="zoom-mic-name" class="mic-code">CABLE Output (VB-Audio Virtual Cable)</code>
+                  <button id="wizard-copy-mic-btn" type="button" class="copy-btn" data-t="copyMicBtn"></button>
+                </div>
+              </div>
+              <div class="zoom-step" data-t="zoomStep3"></div>
+              <div class="zoom-step" data-t="zoomStep4"></div>
+            </div>
+
+            <div class="wizard-actions">
+              <button id="wizard-zoom-back" type="button" data-t="back"></button>
+              <button id="wizard-zoom-finish" type="button" class="primary finish-btn" data-t="finishSetupBtn"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

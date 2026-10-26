@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.85"
+
+[workspace.dependencies]
+soritong-core = { path = "crates/soritong-core" }
+soritong-audio = { path = "crates/soritong-audio" }
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+hound = "3.5"

@@ -1,0 +1,23 @@
+[package]
+name = "soritong-cli"
+description = "Headless soritong: list audio devices and speak text into a virtual mic from the terminal."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "soritong"
+path = "src/main.rs"
+
+[dependencies]
+soritong-core.workspace = true
+soritong-audio.workspace = true
+clap = { version = "4", features = ["derive"] }
+dirs = "7"
+env_logger = { version = "0.11", default-features = false, features = ["auto-color"] }
+soritong-engine-edge = { path = "../soritong-engine-edge" }
+soritong-engine-elevenlabs = { path = "../soritong-engine-elevenlabs" }
+soritong-engine-openai = { path = "../soritong-engine-openai" }
+soritong-engine-supertonic = { path = "../soritong-engine-supertonic" }
+soritong-engine-system = { path = "../soritong-engine-system" }

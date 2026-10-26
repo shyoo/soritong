@@ -1,0 +1,19 @@
+[package]
+name = "soritong-engine-system"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+soritong-core = { path = "../soritong-core" }
+hound = "3.5"
+
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62"
+features = [
+    "Foundation",
+    "Foundation_Collections",
+    "Media_Core",
+    "Media_SpeechSynthesis",
+    "Storage_Streams",
+]

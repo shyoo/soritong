@@ -5,15 +5,21 @@ carries current state.
 
 ## Before you start
 
-- Detected stack: not detected.
-- TODO: anything an agent cannot infer from the code — a service that must be running, a credential
-  that must be present, a directory that is generated and must not be hand-edited.
+- Stack: Rust 2024 Cargo workspace (`crates/*`); the desktop app will be Tauri 2 with a plain HTML/JS frontend.
+- No network, API keys or audio hardware may be needed by `cargo test`. Use `soritong_core::mock::MockEngine`;
+  tests that need a key or a device are `#[ignore]` and documented.
+- API keys come from the environment in examples (`ELEVENLABS_API_KEY`…) and from Windows Credential
+  Manager in the app. Never from a committed file.
+- Model weights (`*.onnx`) are downloaded at runtime, never committed.
 
 ## Checks
 
 Run these and make them pass before you report done:
 
-- _None declared yet._ Add them in Project → Settings → Verification.
+- `cargo fmt --all --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo test --workspace`
+- When `crates/soritong-app/ui/` changes: `node --test crates/soritong-app/ui-tests/keys.test.mjs`
 
 ## When you commit
 
@@ -24,6 +30,41 @@ Run these and make them pass before you report done:
 
 ## House rules
 
-- TODO: the conventions this project actually holds — naming, error handling, test placement.
-- TODO: the things that have bitten somebody here before. An entry earns its place by having cost
-  a real debugging session; delete it when the pitfall becomes impossible.
+- Shared contracts live in `soritong-core` (engine trait) and `soritong-audio` (Player, Speaker). Don't
+  change their signatures in an engine or app change. Add to them, or change them together with every caller.
+- One crate per engine (`crates/soritong-engine-<name>`), errors mapped to `soritong_core::TtsError`.
+- Unit tests sit next to the code (`#[cfg(test)]`).
+- Pitfalls: the things that have bitten somebody here before. An entry earns its place by having
+  cost a real debugging session; delete it when the pitfall becomes impossible.
+  - Example names are global across the workspace: two crates with `examples/say.rs` link to the
+    same `target/debug/examples/say.exe`, and parallel builds fail with LNK1104. Name examples
+    `say_<engine>`.
+  - `Start-Process -RedirectStandardOutput` makes the app inherit the caller's stdout, so any
+    shell reading the launcher's output hangs until the app exits. `scripts/run-app.ps1` avoids it.
+    Use it to launch the app.
+  - In PowerShell, `FindWindow($null, "soritong")` marshals `$null` as `""` and never matches.
+    Use `(Get-Process soritong-app).MainWindowHandle`.
+  - Node 22 `node --test <directory>` fails with MODULE_NOT_FOUND. Pass the test files.
+  - CDP `Runtime.evaluate` shares one top-level scope across calls, so a second `const x` throws.
+    Wrap snippets in `(() => { ... })()`.
+  - Korean IME in WebView2 (Microsoft IME): Enter on an uncommitted syllable fires `compositionend`
+    first, then a plain Enter keydown (keyCode 13, `isComposing` false). See
+    `crates/soritong-app/README.md` before touching `ui/keys.js`.
+
+## Scripts (`scripts/`): run and inspect the app
+
+Reuse these instead of writing new drivers. They need Windows, Node ≥ 22 and a debug build.
+
+- `scripts/run-app.ps1 [-Demo] [-NoBuild] [-Stop]`: builds and starts the app with settings in
+  `%TEMP%\soritong-try` (never your own) and the WebView2 page on CDP port 9333. `-Demo` adds a
+  fake keyed cloud engine for the settings pane and Credential Manager. `-Stop` closes the app the
+  way a user would, which saves the window geometry.
+- `node scripts/app-smoke.mjs [shot.png]`: speaks a message (queued → speaking → done), simulates
+  IME composition, checks Shift+Enter, and takes a screenshot. Exits 1 on failure.
+- `scripts/cdp.mjs`: a dependency-free CDP client (`connect()`, `eval`, `key`, `send`,
+  `screenshot`) for one-off checks.
+- `scripts/ime-type.ps1 -Keys "dkssudgktpdy{ENTER}"` with `node scripts/ime-watch.mjs arm|read`:
+  types through the **real** Windows Korean IME and shows the events the box saw. It injects real
+  keystrokes, so don't run it while someone is using the machine.
+- `scripts/hotkey-check.ps1`: minimises the window, presses Ctrl+Alt+Space, and checks the window
+  comes back in front.
