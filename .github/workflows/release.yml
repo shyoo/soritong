@@ -102,7 +102,9 @@ jobs:
           name: soritong-windows-x64
           path: dist
 
+      # GitHub stores attestations only for public repos on personal accounts.
       - uses: actions/attest-build-provenance@v2
+        if: ${{ !github.event.repository.private }}
         with:
           subject-path: 'dist/*'
 
