@@ -32,6 +32,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
 Set-Location (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'version.ps1')
 
@@ -89,8 +90,11 @@ if ($Action -eq 'plan') {
 $main = Git rev-parse --verify main
 Git merge-base --is-ancestor $main origin/main | Out-Null
 
-$runs = GhJson api "repos/shyoo/soritong/actions/workflows/ci.yml/runs?head_sha=$commit&event=push&per_page=100"
-if (-not @($runs.workflow_runs | Where-Object { $_.head_branch -eq 'main' -and $_.conclusion -eq 'success' }).Count) {
+# Counted inside gh: the full JSON carries commit titles, which PowerShell mis-decodes outside UTF-8 consoles.
+$passed = & gh api "repos/shyoo/soritong/actions/workflows/ci.yml/runs?head_sha=$commit&event=push&per_page=100" `
+    --jq '[.workflow_runs[] | select(.head_branch == "main" and .conclusion == "success")] | length'
+if ($LASTEXITCODE -ne 0) { throw 'Could not read CI runs' }
+if ([int]$passed -eq 0) {
     throw "CI on origin/main must pass for commit $commit before cutting a release"
 }
 
